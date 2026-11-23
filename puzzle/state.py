@@ -4,6 +4,14 @@ from typing import List, Optional, Tuple
 
 GOAL_STATE = (1, 2, 3, 4, 5, 6, 7, 8, 0)
 
+# Movimentos do espaço vazio: (nome da ação, deslocamento de linha, deslocamento de coluna)
+MOVES = (
+    ("UP", -1, 0),
+    ("DOWN", 1, 0),
+    ("LEFT", 0, -1),
+    ("RIGHT", 0, 1),
+)
+
 
 class State:
     """Representa um estado do 8-puzzle como tupla imutável de 9 inteiros (0 = espaço vazio)."""
@@ -26,18 +34,31 @@ class State:
 
     def neighbors(self) -> List["State"]:
         """Retorna os estados filhos válidos a partir deste estado."""
-        # TODO: implemente a geração de estados filhos
-        raise NotImplementedError
+        children: List["State"] = []
+        blank = self.blank_index
+        row, col = divmod(blank, 3)
+        for action, dr, dc in MOVES:
+            new_row, new_col = row + dr, col + dc
+            if 0 <= new_row < 3 and 0 <= new_col < 3:
+                target = new_row * 3 + new_col
+                tiles = list(self.tiles)
+                tiles[blank], tiles[target] = tiles[target], tiles[blank]
+                children.append(State(tuple(tiles), parent=self, action=action, cost=self.cost + 1))
+        return children
 
     def path(self) -> List["State"]:
         """Retorna a sequência de estados do estado inicial até este."""
-        # TODO: implemente a reconstrução do caminho usando self.parent
-        raise NotImplementedError
+        states: List["State"] = []
+        node: Optional["State"] = self
+        while node is not None:
+            states.append(node)
+            node = node.parent
+        states.reverse()
+        return states
 
     def actions(self) -> List[str]:
         """Retorna a sequência de ações do estado inicial até este."""
-        # TODO: implemente usando path()
-        raise NotImplementedError
+        return [state.action for state in self.path() if state.action is not None]
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, State) and self.tiles == other.tiles
